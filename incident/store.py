@@ -74,6 +74,20 @@ class Store:
             )
             return changed
 
+    def list(self, tenant, limit=50):
+        if not 1 <= limit <= 100:
+            raise ValueError("Queue limit must be between 1 and 100")
+        with self.lock:
+            rows = self.db.execute(
+                "SELECT body FROM incidents WHERE tenant=?", (tenant,)
+            ).fetchall()
+            incidents = sorted(
+                (json.loads(row[0]) for row in rows),
+                key=lambda item: (item["created_at"], item["id"]),
+                reverse=True,
+            )
+            return incidents[:limit]
+
     def close(self):
         with self.lock:
             self.db.close()
