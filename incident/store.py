@@ -4,6 +4,7 @@ from pathlib import Path
 import json
 import sqlite3
 import threading
+import uuid
 
 
 class Store:
@@ -73,6 +74,47 @@ class Store:
                 (json.dumps(changed, allow_nan=False), tenant, key),
             )
             return changed
+
+    def claim(self, tenant, key, owner, now, seconds=60):
+        if not owner or not 1 <= seconds <= 120:
+            raise ValueError("Invalid worker lease")
+
+        def change(incident):
+            lease = incident.get("lease")
+            if incident["status"] in {
+                "awaiting_approval",
+                "resolved",
+                "escalated",
+                "cancelled",
+            }:
+                raise ValueError("Incident does not need a worker")
+            if lease and lease["expires_at"] > now:
+                raise ValueError("Incident already has a live worker")
+            incident["lease"] = {
+                "owner": owner,
+                "token": uuid.uuid4().hex,
+                "expires_at": now + seconds,
+            }
+
+        return self.mutate(tenant, key, change)
+
+    @staticmethod
+    def owns_lease(incident, lease, now):
+        current = incident.get("lease")
+        return bool(
+            current
+            and current["token"] == lease["token"]
+            and current["owner"] == lease["owner"]
+            and current["expires_at"] > now
+        )
+
+    def worker_update(self, tenant, key, lease, now, change, revision=None):
+        def fenced(incident):
+            if not self.owns_lease(incident, lease, now):
+                raise ValueError("Worker lease expired or was replaced")
+            change(incident)
+
+        return self.mutate(tenant, key, fenced, revision)
 
     def list(self, tenant, limit=50):
         if not 1 <= limit <= 100:
