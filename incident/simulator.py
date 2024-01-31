@@ -4,6 +4,8 @@ import json
 import sqlite3
 import threading
 from .identity import identifier
+from .evidence import digest
+from .plans import validate_step
 from .scenarios import FAULTS, healthy_state, observation
 
 
@@ -16,6 +18,10 @@ class Simulator:
         self.db.execute("PRAGMA journal_mode=WAL")
         self.db.execute(
             "CREATE TABLE IF NOT EXISTS services(tenant TEXT,service TEXT,body TEXT NOT NULL,PRIMARY KEY(tenant,service))"
+        )
+
+        self.db.execute(
+            "CREATE TABLE IF NOT EXISTS receipts(tenant TEXT,key TEXT,body TEXT NOT NULL,PRIMARY KEY(tenant,key))"
         )
 
     @contextmanager
@@ -74,6 +80,59 @@ class Simulator:
     def observe(self, tenant, service):
         with self.lock:
             return observation(self._state(tenant, service))
+
+    def apply(self, tenant, service, step, key, expected_generation):
+        checked = validate_step(step, service)
+        if (
+            not isinstance(key, str)
+            or not 16 <= len(key) <= 100
+            or type(expected_generation) is not int
+        ):
+            raise ValueError("Invalid effect identity or generation")
+        request_digest = digest(
+            {
+                "tenant": tenant,
+                "service": service,
+                "step": checked,
+                "generation": expected_generation,
+            }
+        )
+        with self.transaction():
+            previous = self.db.execute(
+                "SELECT body FROM receipts WHERE tenant=? AND key=?", (tenant, key)
+            ).fetchone()
+            if previous:
+                receipt = json.loads(previous[0])
+                if receipt["request_digest"] != request_digest:
+                    raise ValueError("Effect key is already bound to another request")
+                return receipt
+            state = self._state(tenant, service)
+            if state["generation"] != expected_generation:
+                raise ValueError("Service evidence is stale; collect it again")
+            fault = next(
+                name
+                for name, spec in FAULTS.items()
+                if spec["action"] == checked["action"]
+            )
+            changed = fault in state["faults"]
+            if changed:
+                state["faults"].remove(fault)
+            state["effects"] += 1
+            state["generation"] += 1
+            receipt = {
+                "key": key,
+                "request_digest": request_digest,
+                "action": checked["action"],
+                "generation_before": expected_generation,
+                "generation_after": state["generation"],
+                "changed": changed,
+                "effect_number": state["effects"],
+            }
+            self._save(tenant, service, state)
+            self.db.execute(
+                "INSERT INTO receipts VALUES(?,?,?)", (tenant, key, json.dumps(receipt))
+            )
+            return receipt
 
     def close(self):
         self.db.close()
