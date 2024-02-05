@@ -134,5 +134,28 @@ class Simulator:
             )
             return receipt
 
+    def workload(self, tenant, service):
+        current = self.observe(tenant, service)
+        return {
+            "ok": current["healthy"],
+            "status": 200 if current["healthy"] else 503,
+            "generation": current["generation"],
+            "message": "Request completed"
+            if current["healthy"]
+            else "Service cannot complete the request",
+        }
+
+    def prometheus(self, tenant, service):
+        identifier(tenant)
+        identifier(service)
+        current = self.observe(tenant, service)
+        return (
+            "\n".join(
+                f'incident_demo_{name}{{tenant="{tenant}",service="{service}"}} {value}'
+                for name, value in sorted(current["metrics"].items())
+            )
+            + "\n"
+        )
+
     def close(self):
         self.db.close()
