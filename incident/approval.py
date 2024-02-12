@@ -20,6 +20,8 @@ def valid_binding(incident):
 
 def review(incident, actor, supplied_digest, now):
     require(actor, "approve")
+    if not incident.get("plan"):
+        raise ValueError("No plan is available for review")
     if (
         actor.tenant != incident["tenant"]
         or actor.subject == incident["plan"]["author"]
