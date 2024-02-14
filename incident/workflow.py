@@ -56,3 +56,47 @@ class Workflow:
             )
 
         return self.store.mutate(actor.tenant, key, change, revision)
+
+    def cancel(self, actor, key, revision, now):
+        require(actor, "edit")
+
+        def change(incident):
+            if incident["status"] in {"resolved", "cancelled"}:
+                raise ValueError("Incident is already finished")
+            incident["status"] = "cancelled"
+            incident["lease"] = None
+            incident["approval"] = None
+            append_event(
+                incident,
+                "cancelled",
+                actor.subject,
+                "Further work cancelled; existing receipts are retained",
+                now,
+            )
+
+        return self.store.mutate(actor.tenant, key, change, revision)
+
+    def retry(self, actor, key, revision, now):
+        require(actor, "collect")
+
+        def change(incident):
+            if incident["status"] not in {"escalated", "awaiting_approval", "approved"}:
+                raise ValueError(
+                    "Incident cannot restart evidence collection in this state"
+                )
+            incident["status"] = "collecting"
+            incident["checkpoint"] = "collect"
+            incident["lease"] = None
+            incident["approval"] = None
+            incident["plan"] = None
+            incident["hypotheses"] = []
+            incident["error"] = None
+            append_event(
+                incident,
+                "recollect",
+                actor.subject,
+                "New evidence requested; prior plan and approval invalidated",
+                now,
+            )
+
+        return self.store.mutate(actor.tenant, key, change, revision)
