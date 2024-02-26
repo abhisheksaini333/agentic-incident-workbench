@@ -134,6 +134,13 @@ class Simulator:
             )
             return receipt
 
+    def receipt(self, tenant, key):
+        with self.lock:
+            row = self.db.execute(
+                "SELECT body FROM receipts WHERE tenant=? AND key=?", (tenant, key)
+            ).fetchone()
+            return json.loads(row[0]) if row else None
+
     def workload(self, tenant, service):
         current = self.observe(tenant, service)
         return {
