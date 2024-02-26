@@ -21,6 +21,13 @@ class Store:
             "CREATE TABLE IF NOT EXISTS incidents(id TEXT PRIMARY KEY,tenant TEXT NOT NULL,body TEXT NOT NULL)"
         )
 
+        self.db.execute(
+            "CREATE TABLE IF NOT EXISTS accounts(subject TEXT PRIMARY KEY,tenant TEXT NOT NULL,body TEXT NOT NULL)"
+        )
+        self.db.execute(
+            "CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,subject TEXT NOT NULL,expires REAL NOT NULL,revoked INTEGER NOT NULL)"
+        )
+
     @contextmanager
     def transaction(self):
         with self.lock:
@@ -129,6 +136,52 @@ class Store:
                 reverse=True,
             )
             return incidents[:limit]
+
+    def account(self, subject):
+        with self.lock:
+            row = self.db.execute(
+                "SELECT body FROM accounts WHERE subject=?", (subject,)
+            ).fetchone()
+            return json.loads(row[0]) if row else None
+
+    def add_account(self, account):
+        with self.transaction():
+            self.db.execute(
+                "INSERT INTO accounts VALUES(?,?,?)",
+                (account["subject"], account["tenant"], json.dumps(account)),
+            )
+
+    def set_roles(self, tenant, subject, roles):
+        from .identity import Actor
+
+        actor = Actor(tenant, subject, frozenset(roles))
+        with self.transaction():
+            account = self.account(subject)
+            if not account or account["tenant"] != tenant:
+                raise LookupError("Account not found")
+            account["roles"] = sorted(actor.roles)
+            self.db.execute(
+                "UPDATE accounts SET body=? WHERE subject=?",
+                (json.dumps(account), subject),
+            )
+
+    def add_session(self, key, subject, expires):
+        with self.transaction():
+            self.db.execute(
+                "INSERT INTO sessions VALUES(?,?,?,0)", (key, subject, expires)
+            )
+
+    def session_active(self, key, subject, now):
+        with self.lock:
+            row = self.db.execute(
+                "SELECT expires,revoked FROM sessions WHERE id=? AND subject=?",
+                (key, subject),
+            ).fetchone()
+            return bool(row and row[0] > now and not row[1])
+
+    def revoke_session(self, key):
+        with self.transaction():
+            self.db.execute("UPDATE sessions SET revoked=1 WHERE id=?", (key,))
 
     def close(self):
         with self.lock:
