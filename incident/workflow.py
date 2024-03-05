@@ -20,12 +20,15 @@ class Workflow:
         def change(incident):
             if incident["status"] not in {"awaiting_approval", "approved"}:
                 raise ValueError("This incident is not awaiting a reviewable plan")
+            incident["plan_sequence"] = (
+                max(incident.get("plan_sequence", 0), incident["plan"]["version"]) + 1
+            )
             incident["plan"] = make_plan(
                 incident,
                 incident["evidence"],
                 steps,
                 actor.subject,
-                incident["plan"]["version"] + 1,
+                incident["plan_sequence"],
                 rationale,
             )
             incident["approval"] = None
