@@ -28,6 +28,10 @@ class Store:
             "CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,subject TEXT NOT NULL,expires REAL NOT NULL,revoked INTEGER NOT NULL)"
         )
 
+        self.db.execute(
+            "CREATE TABLE IF NOT EXISTS outbox(key TEXT PRIMARY KEY,tenant TEXT NOT NULL,incident_id TEXT NOT NULL,body TEXT NOT NULL)"
+        )
+
     @contextmanager
     def transaction(self):
         with self.lock:
