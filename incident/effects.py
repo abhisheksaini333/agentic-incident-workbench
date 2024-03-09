@@ -118,3 +118,80 @@ class EffectJournal:
                 for row in rows
                 if (entry := json.loads(row[0]))["status"] == "pending"
             ]
+
+    def _accept(self, entry, receipt, now):
+        if (
+            receipt.get("key") != entry["key"]
+            or receipt.get("request_digest") != entry["request_digest"]
+            or receipt.get("action") != entry["step"]["action"]
+            or receipt.get("generation_before") != entry["generation"]
+            or receipt.get("generation_after") != entry["generation"] + 1
+            or type(receipt.get("changed")) is not bool
+        ):
+            raise ValueError("Simulator receipt does not match the prepared request")
+        current = self._read(entry["tenant"], entry["key"])
+        if current["status"] == "delivered":
+            if current["receipt"] != receipt:
+                raise ValueError("Simulator replay changed its receipt")
+            return receipt
+        incident = self.store._get(entry["tenant"], entry["incident_id"])
+        current.update(status="delivered", receipt=deepcopy(receipt))
+        self.store.db.execute(
+            "UPDATE outbox SET body=? WHERE tenant=? AND key=?",
+            (json.dumps(current), entry["tenant"], entry["key"]),
+        )
+        incident["receipts"].append(
+            {**deepcopy(receipt), "plan_digest": entry["plan_digest"]}
+        )
+        append_event(
+            incident,
+            "effect_acknowledged",
+            "executor",
+            "Simulator receipt recorded: " + entry["step"]["action"],
+            now,
+        )
+        self._write_incident(incident)
+        return receipt
+
+    def reconcile(self, entry, client, now):
+        receipt = client.receipt(entry["tenant"], entry["service"], entry["key"])
+        if receipt is None:
+            return None
+        with self.store.transaction():
+            return self._accept(entry, receipt, now)
+
+    def _reserve_attempt(self, entry, lease, now):
+        with self.store.transaction():
+            incident = self.store._get(entry["tenant"], entry["incident_id"])
+            self._authorized(incident, lease, now)
+            if incident["plan"]["digest"] != entry["plan_digest"]:
+                raise ValueError("Prepared action belongs to an older plan")
+            current = self._read(entry["tenant"], entry["key"])
+            if current["attempts"] >= 3:
+                raise ValueError("Effect retry budget exhausted")
+            current["attempts"] += 1
+            self.store.db.execute(
+                "UPDATE outbox SET body=? WHERE tenant=? AND key=?",
+                (json.dumps(current), entry["tenant"], entry["key"]),
+            )
+
+    def dispatch(self, entry, lease, client, now, after_effect=None):
+        reconciled = self.reconcile(entry, client, now)
+        if reconciled is not None:
+            return reconciled
+        self._reserve_attempt(entry, lease, now)
+        with self.store.transaction():
+            incident = self.store._get(entry["tenant"], entry["incident_id"])
+            self._authorized(incident, lease, now)
+            if incident["plan"]["digest"] != entry["plan_digest"]:
+                raise ValueError("Prepared action belongs to an older plan")
+            receipt = client.apply(
+                entry["tenant"],
+                entry["service"],
+                entry["step"],
+                entry["key"],
+                entry["generation"],
+            )
+            if after_effect:
+                after_effect()
+            return self._accept(entry, receipt, now)
