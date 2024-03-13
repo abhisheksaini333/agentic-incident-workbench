@@ -126,6 +126,8 @@ class EffectJournal:
             or receipt.get("action") != entry["step"]["action"]
             or receipt.get("generation_before") != entry["generation"]
             or receipt.get("generation_after") != entry["generation"] + 1
+            or type(receipt.get("effect_number")) is not int
+            or receipt["effect_number"] < 1
             or type(receipt.get("changed")) is not bool
         ):
             raise ValueError("Simulator receipt does not match the prepared request")
