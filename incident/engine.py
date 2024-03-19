@@ -135,3 +135,31 @@ class Engine:
             )
 
         return self._finish(reserved, started, update)
+
+    def _node_diagnose(self, incident):
+        reserved = self._reserve(incident, "control")
+        started = time.monotonic()
+        hypotheses = self.policy.diagnose(incident["evidence"])
+        from .diagnosis import supported
+
+        references = {
+            item["reference"] for item in incident["evidence"]["observations"]
+        }
+        for hypothesis in hypotheses:
+            if not supported(hypothesis["label"], incident["evidence"]) or not set(
+                hypothesis["references"]
+            ).issubset(references):
+                raise ValueError("Diagnosis is not supported by current evidence")
+
+        def update(current):
+            current.update(hypotheses=hypotheses, status="planning", checkpoint="plan")
+            append_event(
+                current,
+                "diagnosis",
+                self.policy.name,
+                f"Evaluated {len(hypotheses)} supported hypotheses",
+                self.clock(),
+                [ref for item in hypotheses for ref in item["references"]],
+            )
+
+        return self._finish(reserved, started, update)
