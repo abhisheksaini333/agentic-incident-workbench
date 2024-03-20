@@ -163,3 +163,65 @@ class Engine:
             )
 
         return self._finish(reserved, started, update)
+
+    def _node_plan(self, incident):
+        from .plans import make_plan
+        from .scenarios import FAULTS
+
+        reserved = self._reserve(incident, "control")
+        started = time.monotonic()
+
+        def update(current):
+            if current["evidence"]["healthy"]:
+                current.update(status="resolved", checkpoint="complete")
+                append_event(
+                    current,
+                    "no_action",
+                    "planner",
+                    "Service is healthy; no remediation proposed",
+                    self.clock(),
+                )
+            elif not current["hypotheses"]:
+                current.update(
+                    status="escalated",
+                    checkpoint="complete",
+                    error="insufficient_evidence",
+                )
+                append_event(
+                    current,
+                    "abstained",
+                    "planner",
+                    "No supported diagnosis; operator investigation required",
+                    self.clock(),
+                )
+            else:
+                steps = [
+                    {
+                        "action": FAULTS[item["label"]]["action"],
+                        "target": current["service"],
+                        "arguments": dict(FAULTS[item["label"]]["arguments"]),
+                    }
+                    for item in current["hypotheses"]
+                ]
+                current["plan_sequence"] += 1
+                rationale = "; ".join(item["reason"] for item in current["hypotheses"])
+                current["plan"] = make_plan(
+                    current,
+                    current["evidence"],
+                    steps,
+                    current["created_by"],
+                    current["plan_sequence"],
+                    rationale,
+                )
+                current.update(
+                    status="awaiting_approval", checkpoint="approval", approval=None
+                )
+                append_event(
+                    current,
+                    "plan_proposed",
+                    "planner",
+                    "Exact remediation plan prepared for an independent reviewer",
+                    self.clock(),
+                )
+
+        return self._finish(reserved, started, update)
