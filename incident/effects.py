@@ -1,5 +1,6 @@
 from copy import deepcopy
 import json
+import time
 from .approval import approved
 from .evidence import digest
 from .identity import Actor, require
@@ -178,13 +179,15 @@ class EffectJournal:
             )
 
     def dispatch(self, entry, lease, client, now, after_effect=None):
-        reconciled = self.reconcile(entry, client, now)
+        started = time.monotonic()
+        current_time = lambda: now + time.monotonic() - started
+        reconciled = self.reconcile(entry, client, current_time())
         if reconciled is not None:
             return reconciled
-        self._reserve_attempt(entry, lease, now)
+        self._reserve_attempt(entry, lease, current_time())
         with self.store.transaction():
             incident = self.store._get(entry["tenant"], entry["incident_id"])
-            self._authorized(incident, lease, now)
+            self._authorized(incident, lease, current_time())
             if incident["plan"]["digest"] != entry["plan_digest"]:
                 raise ValueError("Prepared action belongs to an older plan")
             receipt = client.apply(
@@ -196,4 +199,4 @@ class EffectJournal:
             )
             if after_effect:
                 after_effect()
-            return self._accept(entry, receipt, now)
+            return self._accept(entry, receipt, current_time())
