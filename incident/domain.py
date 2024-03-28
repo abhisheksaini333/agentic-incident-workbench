@@ -33,6 +33,7 @@ def new_incident(actor, service, title, now):
         "status": "new",
         "revision": 1,
         "evidence": None,
+        "evidence_history": [],
         "hypotheses": [],
         "plan_sequence": 0,
         "plan": None,

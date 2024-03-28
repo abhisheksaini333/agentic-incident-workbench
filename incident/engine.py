@@ -117,6 +117,7 @@ class Engine:
         evidence = snapshot(observed, version)
 
         def update(current):
+            current["evidence_history"].append(evidence)
             current.update(
                 evidence=evidence,
                 hypotheses=[],
