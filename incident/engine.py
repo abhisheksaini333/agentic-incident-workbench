@@ -226,3 +226,42 @@ class Engine:
                 )
 
         return self._finish(reserved, started, update)
+
+    def _node_execute(self, incident):
+        reserved = self._reserve(incident, "control")
+        started = time.monotonic()
+        for entry in self.journal.pending(incident["tenant"], incident["id"]):
+            self.journal.reconcile(entry, self.tools, self.clock())
+        current = self.store.get(incident["tenant"], incident["id"])
+        completed = [
+            receipt
+            for receipt in current["receipts"]
+            if receipt["plan_digest"] == current["plan"]["digest"]
+        ]
+        index = len(completed)
+        if index < len(current["plan"]["steps"]):
+            entry = self.journal.prepare(
+                current["tenant"], current["id"], current["lease"], index, self.clock()
+            )
+            self.journal.dispatch(
+                entry, current["lease"], self.tools, self.clock(), self.after_effect
+            )
+        current = self.store.get(incident["tenant"], incident["id"])
+
+        def update(value):
+            done = [
+                receipt
+                for receipt in value["receipts"]
+                if receipt["plan_digest"] == value["plan"]["digest"]
+            ]
+            if len(done) == len(value["plan"]["steps"]):
+                value.update(status="verifying", checkpoint="verify")
+                append_event(
+                    value,
+                    "remediation_recorded",
+                    "executor",
+                    "All reviewed actions have simulator receipts",
+                    self.clock(),
+                )
+
+        return self._finish(current, started, update)
