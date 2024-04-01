@@ -265,3 +265,36 @@ class Engine:
                 )
 
         return self._finish(current, started, update)
+
+    def _node_verify(self, incident):
+        reserved = self._reserve(incident, "read")
+        started = time.monotonic()
+        observed = self.tools.observe(incident["tenant"], incident["service"])
+        reserved = self._reserve(reserved, "read")
+        workload = self.tools.workload(incident["tenant"], incident["service"])
+        evidence = snapshot(observed, incident["evidence"]["version"] + 1)
+
+        def update(current):
+            current["evidence_history"].append(evidence)
+            current["evidence"] = evidence
+            recovered = (
+                evidence["healthy"]
+                and workload.get("ok") is True
+                and workload.get("status") == 200
+            )
+            current.update(
+                status="resolved" if recovered else "escalated",
+                checkpoint="complete",
+                error=None if recovered else "verification_failed",
+            )
+            append_event(
+                current,
+                "verification",
+                "verifier",
+                "Service and workload recovered"
+                if recovered
+                else "Recovery not verified; operator investigation required",
+                self.clock(),
+            )
+
+        return self._finish(reserved, started, update)
