@@ -101,7 +101,12 @@ class Store:
                 raise ValueError("Incident does not need a worker")
             if lease and lease["expires_at"] > now:
                 raise ValueError("Incident already has a live worker")
+            if lease:
+                incident["budget"]["seconds"] += max(
+                    0, min(now, lease["expires_at"]) - lease.get("started_at", now)
+                )
             incident["lease"] = {
+                "started_at": now,
                 "owner": owner,
                 "token": uuid.uuid4().hex,
                 "expires_at": now + seconds,
