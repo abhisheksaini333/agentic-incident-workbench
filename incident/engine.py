@@ -71,7 +71,7 @@ class Engine:
         )
 
     def tick(self, tenant, key, expected=None):
-        current = self.store.get(tenant, key)
+        current = self.reconcile(tenant, key)
         if current["status"] in {
             "awaiting_approval",
             "resolved",
@@ -82,12 +82,14 @@ class Engine:
         if expected and current["checkpoint"] != expected:
             return current
         claimed = self.store.claim(tenant, key, self.owner, self.clock())
+        started = time.monotonic()
         try:
             method = getattr(self, "_node_" + claimed["checkpoint"])
             return method(claimed)
         except Exception as error:
 
             def fail(incident):
+                incident["budget"]["seconds"] += time.monotonic() - started
                 incident.update(
                     status="escalated",
                     checkpoint="complete",
@@ -298,3 +300,21 @@ class Engine:
             )
 
         return self._finish(reserved, started, update)
+
+    def reconcile(self, tenant, key):
+        self.store.get(tenant, key)
+        for entry in self.journal.pending(tenant, key):
+            self.journal.reconcile(entry, self.tools, self.clock())
+        return self.store.get(tenant, key)
+
+    def run_until_pause(self, tenant, key):
+        for _ in range(self.limits.steps):
+            current = self.tick(tenant, key)
+            if current["status"] in {
+                "awaiting_approval",
+                "resolved",
+                "escalated",
+                "cancelled",
+            }:
+                return current
+        return self.store.get(tenant, key)
