@@ -103,3 +103,26 @@ class Workflow:
             )
 
         return self.store.mutate(actor.tenant, key, change, revision)
+
+    def resume(self, actor, key, revision, now):
+        from .approval import approved
+
+        require(actor, "collect")
+
+        def change(incident):
+            if incident["status"] != "escalated" or not approved(incident, now):
+                raise ValueError(
+                    "Resume requires a stopped incident with an unexpired exact approval"
+                )
+            incident.update(
+                status="approved", checkpoint="execute", lease=None, error=None
+            )
+            append_event(
+                incident,
+                "resumed",
+                actor.subject,
+                "Approved work resumed; pending receipts will be reconciled first",
+                now,
+            )
+
+        return self.store.mutate(actor.tenant, key, change, revision)
