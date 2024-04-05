@@ -1,0 +1,109 @@
+import time
+from dataclasses import asdict
+from fastapi import FastAPI, Depends, HTTPException
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer
+from pydantic import BaseModel, Field
+from .identity import require
+from .workflow import Workflow
+
+
+class LoginRequest(BaseModel):
+    subject: str = Field(min_length=1, max_length=100)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class IncidentRequest(BaseModel):
+    service: str = Field(min_length=2, max_length=48)
+    title: str = Field(min_length=1, max_length=160)
+
+
+def create_app(store, auth, tools=None):
+    app = FastAPI(title="Incident Workbench")
+    workflow = Workflow(store)
+    bearer = HTTPBearer(auto_error=False)
+
+    def token(credentials=Depends(bearer)):
+        if not credentials:
+            raise HTTPException(
+                401, "Sign in to continue", headers={"WWW-Authenticate": "Bearer"}
+            )
+        return credentials.credentials
+
+    def actor(value=Depends(token)):
+        try:
+            return auth.actor(value)
+        except PermissionError as error:
+            raise HTTPException(401, "Session is invalid or expired") from error
+
+    @app.exception_handler(PermissionError)
+    async def forbidden(request, error):
+        return JSONResponse(status_code=403, content={"detail": str(error)})
+
+    @app.exception_handler(ValueError)
+    async def conflict(request, error):
+        return JSONResponse(status_code=409, content={"detail": str(error)})
+
+    @app.exception_handler(LookupError)
+    async def missing(request, error):
+        return JSONResponse(
+            status_code=404, content={"detail": "Incident or account not found"}
+        )
+
+    @app.post("/api/session")
+    def login(request: LoginRequest):
+        try:
+            return {
+                "access_token": auth.login(request.subject, request.password),
+                "token_type": "Bearer",
+                "expires_in": 1800,
+            }
+        except PermissionError as error:
+            raise HTTPException(401, "Account or password was not accepted") from error
+
+    @app.delete("/api/session")
+    def logout(value=Depends(token)):
+        try:
+            auth.logout(value)
+        except PermissionError as error:
+            raise HTTPException(401, "Session is invalid or expired") from error
+        return {"signed_out": True}
+
+    @app.get("/api/me")
+    def me(current=Depends(actor)):
+        return {
+            "tenant": current.tenant,
+            "subject": current.subject,
+            "roles": sorted(current.roles),
+        }
+
+    @app.get("/api/incidents")
+    def queue(current=Depends(actor)):
+        require(current, "read")
+        return {
+            "incidents": [
+                {
+                    key: item[key]
+                    for key in [
+                        "id",
+                        "title",
+                        "service",
+                        "status",
+                        "revision",
+                        "created_at",
+                    ]
+                }
+                for item in store.list(current.tenant)
+            ]
+        }
+
+    @app.get("/api/incidents/{key}")
+    def detail(key: str, current=Depends(actor)):
+        require(current, "read")
+        return store.get(current.tenant, key)
+
+    @app.post("/api/incidents", status_code=201)
+    def create(request: IncidentRequest, current=Depends(actor)):
+        return workflow.create(current, request.service, request.title, time.time())
+
+    return app
