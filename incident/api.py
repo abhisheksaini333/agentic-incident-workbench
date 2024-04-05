@@ -18,6 +18,19 @@ class IncidentRequest(BaseModel):
     title: str = Field(min_length=1, max_length=160)
 
 
+class RevisionRequest(BaseModel):
+    revision: int = Field(ge=1)
+
+
+class ReviewRequest(RevisionRequest):
+    digest: str = Field(min_length=64, max_length=64)
+
+
+class PlanRequest(RevisionRequest):
+    steps: list[dict] = Field(min_length=1, max_length=3)
+    rationale: str = Field(min_length=1, max_length=1000)
+
+
 def create_app(store, auth, tools=None):
     app = FastAPI(title="Incident Workbench")
     workflow = Workflow(store)
@@ -105,5 +118,34 @@ def create_app(store, auth, tools=None):
     @app.post("/api/incidents", status_code=201)
     def create(request: IncidentRequest, current=Depends(actor)):
         return workflow.create(current, request.service, request.title, time.time())
+
+    @app.put("/api/incidents/{key}/plan")
+    def edit(key: str, request: PlanRequest, current=Depends(actor)):
+        return workflow.edit(
+            current,
+            key,
+            request.steps,
+            request.rationale,
+            request.revision,
+            time.time(),
+        )
+
+    @app.post("/api/incidents/{key}/approve")
+    def approve(key: str, request: ReviewRequest, current=Depends(actor)):
+        return workflow.approve(
+            current, key, request.digest, request.revision, time.time()
+        )
+
+    @app.post("/api/incidents/{key}/cancel")
+    def cancel(key: str, request: RevisionRequest, current=Depends(actor)):
+        return workflow.cancel(current, key, request.revision, time.time())
+
+    @app.post("/api/incidents/{key}/recollect")
+    def recollect(key: str, request: RevisionRequest, current=Depends(actor)):
+        return workflow.retry(current, key, request.revision, time.time())
+
+    @app.post("/api/incidents/{key}/resume")
+    def resume(key: str, request: RevisionRequest, current=Depends(actor)):
+        return workflow.resume(current, key, request.revision, time.time())
 
     return app
