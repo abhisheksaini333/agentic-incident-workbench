@@ -31,6 +31,16 @@ class PlanRequest(RevisionRequest):
     rationale: str = Field(min_length=1, max_length=1000)
 
 
+class RolesRequest(BaseModel):
+    roles: list[str] = Field(max_length=4)
+
+
+class SimulationRequest(BaseModel):
+    service: str = Field(min_length=2, max_length=48)
+    faults: list[str] = Field(max_length=3)
+    variant: int = Field(default=0, ge=0, le=1)
+
+
 def create_app(store, auth, tools=None):
     app = FastAPI(title="Incident Workbench")
     workflow = Workflow(store)
@@ -147,5 +157,44 @@ def create_app(store, auth, tools=None):
     @app.post("/api/incidents/{key}/resume")
     def resume(key: str, request: RevisionRequest, current=Depends(actor)):
         return workflow.resume(current, key, request.revision, time.time())
+
+    @app.put("/api/accounts/{subject}/roles")
+    def roles(subject: str, request: RolesRequest, current=Depends(actor)):
+        require(current, "admin")
+        store.set_roles(current.tenant, subject, request.roles)
+        return {"subject": subject, "roles": sorted(request.roles)}
+
+    @app.post("/api/simulation")
+    def simulate(request: SimulationRequest, current=Depends(actor)):
+        require(current, "admin")
+        if tools is None:
+            raise HTTPException(503, "The local simulator is unavailable")
+        tools.provision(current.tenant, request.service)
+        return tools.inject(
+            current.tenant, request.service, request.faults, request.variant
+        )
+
+    @app.post("/api/incidents/{key}/reconcile")
+    def reconcile(key: str, current=Depends(actor)):
+        require(current, "collect")
+        if tools is None:
+            raise HTTPException(503, "The local simulator is unavailable")
+        from .engine import Engine
+
+        return Engine(store, tools).reconcile(current.tenant, key)
+
+    @app.get("/api/config")
+    def configuration():
+        return {
+            "modes": ["rules"],
+            "services": [
+                "heap-api",
+                "busy-api",
+                "release-api",
+                "catalog-api",
+                "storage-api",
+                "queue-api",
+            ],
+        }
 
     return app
