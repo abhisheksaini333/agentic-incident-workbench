@@ -6,6 +6,8 @@ from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
 from .identity import require
 from .workflow import Workflow
+from .http_limits import BodyLimitMiddleware
+from .rate_limit import RateLimit
 
 
 class LoginRequest(BaseModel):
@@ -43,6 +45,30 @@ class SimulationRequest(BaseModel):
 
 def create_app(store, auth, tools=None):
     app = FastAPI(title="Incident Workbench")
+    app.add_middleware(BodyLimitMiddleware)
+    limits = RateLimit()
+
+    @app.middleware("http")
+    async def headers(request, call_next):
+        if request.url.path == "/api/session" and request.method == "POST":
+            address = request.client.host if request.client else "unknown"
+            if not limits.allow(address, time.monotonic()):
+                return JSONResponse(
+                    status_code=429,
+                    content={"detail": "Too many sign-in attempts; wait a minute"},
+                    headers={"Retry-After": "60"},
+                )
+        response = await call_next(request)
+        response.headers.update(
+            {
+                "Cache-Control": "no-store",
+                "X-Content-Type-Options": "nosniff",
+                "X-Frame-Options": "DENY",
+                "Referrer-Policy": "no-referrer",
+            }
+        )
+        return response
+
     workflow = Workflow(store)
     bearer = HTTPBearer(auto_error=False)
 
@@ -196,5 +222,18 @@ def create_app(store, auth, tools=None):
                 "queue-api",
             ],
         }
+
+    @app.get("/health")
+    def health():
+        return {"status": "ok"}
+
+    @app.get("/ready")
+    def readiness():
+        try:
+            with store.lock:
+                store.db.execute("SELECT 1").fetchone()
+        except Exception:
+            raise HTTPException(503, "Storage is unavailable")
+        return {"status": "ready", "simulator_configured": tools is not None}
 
     return app

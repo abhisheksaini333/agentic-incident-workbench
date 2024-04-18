@@ -3,6 +3,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.security import HTTPBearer
 from pydantic import BaseModel, Field
+from .http_limits import BodyLimitMiddleware
 
 
 class FaultRequest(BaseModel):
@@ -22,6 +23,7 @@ def create_simulator_app(simulator, worker_key, admin_key):
             "Use distinct private simulator keys of at least 24 characters"
         )
     app = FastAPI(title="Incident service simulator")
+    app.add_middleware(BodyLimitMiddleware)
     bearer = HTTPBearer(auto_error=False)
 
     def worker(credentials=Depends(bearer)):
