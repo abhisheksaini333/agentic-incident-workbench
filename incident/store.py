@@ -192,6 +192,27 @@ class Store:
         with self.transaction():
             self.db.execute("UPDATE sessions SET revoked=1 WHERE id=?", (key,))
 
+    def runnable(self, now, limit=20):
+        with self.lock:
+            rows = self.db.execute("SELECT body FROM incidents").fetchall()
+            active = []
+            for row in rows:
+                incident = json.loads(row[0])
+                if incident["status"] in {
+                    "new",
+                    "collecting",
+                    "diagnosing",
+                    "planning",
+                    "approved",
+                    "executing",
+                    "verifying",
+                }:
+                    if not incident["lease"] or incident["lease"]["expires_at"] <= now:
+                        active.append(incident)
+            return sorted(active, key=lambda item: (item["created_at"], item["id"]))[
+                :limit
+            ]
+
     def close(self):
         with self.lock:
             self.db.close()
