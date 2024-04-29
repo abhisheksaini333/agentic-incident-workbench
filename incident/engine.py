@@ -308,7 +308,7 @@ class Engine:
         return self.store.get(tenant, key)
 
     def run_until_pause(self, tenant, key):
-        for _ in range(self.limits.steps):
+        for _ in range(self.limits.steps + 1):
             current = self.tick(tenant, key)
             if current["status"] in {
                 "awaiting_approval",

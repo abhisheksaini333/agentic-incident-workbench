@@ -9,7 +9,7 @@ def test_step_budget_stops_before_unbounded_progress():
     result = Engine(s, tools, limits=Limits(steps=2), clock=lambda: 10).run_until_pause(
         "acme", i["id"]
     )
-    assert result["checkpoint"] == "plan"
+    assert result["status"] == "escalated"
     result = Engine(s, tools, limits=Limits(steps=2), clock=lambda: 10).tick(
         "acme", i["id"]
     )
