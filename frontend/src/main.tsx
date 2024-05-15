@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Api } from "./api.mjs";
 import { Login } from "./Login";
+import { Desk } from "./Desk";
 import "./styles.css";
 
 type User = { tenant: string; subject: string; roles: string[] };
@@ -75,11 +76,7 @@ function App() {
           </div>
         )}
         {user ? (
-          <section>
-            <p className="eyebrow">YOUR OPERATIONS DESK</p>
-            <h2>Incidents</h2>
-            <p className="muted">Signed in as {user.subject}.</p>
-          </section>
+          <Desk api={api} user={user} onError={setError} />
         ) : token ? (
           <p role="status">Opening your incident desk…</p>
         ) : (
