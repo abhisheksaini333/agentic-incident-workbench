@@ -4,6 +4,7 @@ import { Incident, IncidentSummary, User, readable } from "./types";
 import { EvidencePanel } from "./EvidencePanel";
 import { TracePanel } from "./TracePanel";
 import { CreateIncident } from "./CreateIncident";
+import { PlanPanel } from "./PlanPanel";
 
 function IncidentDetail({
   api,
@@ -11,12 +12,14 @@ function IncidentDetail({
   user,
   onError,
   onChanged,
+  refresh,
 }: {
   api: Api;
   id: string;
   user: User;
   onError: (message: string) => void;
   onChanged: () => void;
+  refresh: number;
 }) {
   const [incident, setIncident] = useState<Incident | null>(null);
   useEffect(() => {
@@ -45,7 +48,7 @@ function IncidentDetail({
       controller.abort();
       clearInterval(interval);
     };
-  }, [api, id]);
+  }, [api, id, refresh]);
   if (!incident)
     return (
       <div className="empty" role="status">
@@ -76,6 +79,13 @@ function IncidentDetail({
           <TracePanel incident={incident} />
         </div>
         <aside>
+          <PlanPanel
+            api={api}
+            incident={incident}
+            user={user}
+            onChanged={onChanged}
+            onError={onError}
+          />
           <section className="panel">
             <p className="eyebrow">DIAGNOSIS</p>
             <h3>Working hypotheses</h3>
@@ -201,6 +211,7 @@ export function Desk({
             id={selected}
             user={user}
             onError={onError}
+            refresh={refresh}
             onChanged={() => setRefresh((value) => value + 1)}
           />
         ) : (
