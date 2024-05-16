@@ -3,6 +3,7 @@ import { Api } from "./api.mjs";
 import { Incident, IncidentSummary, User, readable } from "./types";
 import { EvidencePanel } from "./EvidencePanel";
 import { TracePanel } from "./TracePanel";
+import { CreateIncident } from "./CreateIncident";
 
 function IncidentDetail({
   api,
@@ -111,7 +112,8 @@ export function Desk({
 }) {
   const [items, setItems] = useState<IncidentSummary[]>([]),
     [selected, setSelected] = useState(""),
-    [refresh, setRefresh] = useState(0);
+    [refresh, setRefresh] = useState(0),
+    [creating, setCreating] = useState(false);
   useEffect(() => {
     let active = true,
       busy = false;
@@ -146,8 +148,27 @@ export function Desk({
           <p className="eyebrow">YOUR OPERATIONS DESK</p>
           <h2>Incidents</h2>
         </div>
-        <span className="small muted">Local service simulator</span>
+        <div className="actions">
+          <span className="small muted">Local service simulator</span>
+          {user.roles.some((role) => ["operator", "admin"].includes(role)) && (
+            <button className="primary" onClick={() => setCreating(true)}>
+              Open incident
+            </button>
+          )}
+        </div>
       </div>
+      {creating && (
+        <CreateIncident
+          api={api}
+          onClose={() => setCreating(false)}
+          onCreated={(incident) => {
+            setCreating(false);
+            setSelected(incident.id);
+            setItems((items) => [incident, ...items]);
+            setRefresh((value) => value + 1);
+          }}
+        />
+      )}
       <div className="desk">
         <nav className="queue" aria-label="Incident queue">
           <div className="queue-caption">

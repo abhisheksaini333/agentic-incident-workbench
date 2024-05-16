@@ -519,3 +519,32 @@ h4 {
     padding: 35px 15px;
   }
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+dialog {
+  width: min(580px, 90vw);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 28px;
+  background: var(--panel);
+  color: #dce6ef;
+  border: 1px solid #577792;
+  border-radius: 3px;
+  box-shadow: 0 30px 100px #0009;
+}
+dialog::backdrop {
+  background: #07101dcc;
+  backdrop-filter: blur(3px);
+}
+dialog h2 {
+  font-size: 26px;
+}
+dialog .panel-heading {
+  margin-bottom: 10px;
+}
