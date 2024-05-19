@@ -31,6 +31,7 @@ class Workflow:
                 incident["plan_sequence"],
                 rationale,
             )
+            incident["review_request"] = None
             incident["approval"] = None
             incident["lease"] = None
             incident["status"] = "awaiting_approval"
@@ -123,6 +124,36 @@ class Workflow:
                 actor.subject,
                 "Approved work resumed; pending receipts will be reconciled first",
                 now,
+            )
+
+        return self.store.mutate(actor.tenant, key, change, revision)
+
+    def request_changes(self, actor, key, revision, reason, now):
+        require(actor, "approve")
+        if not isinstance(reason, str) or not 1 <= len(reason.strip()) <= 500:
+            raise ValueError("Explain the requested changes in 1 to 500 characters")
+
+        def change(incident):
+            if (
+                incident["status"] not in {"awaiting_approval", "approved"}
+                or not incident["plan"]
+            ):
+                raise ValueError("This plan is no longer awaiting a review decision")
+            if incident["plan"]["author"] == actor.subject:
+                raise PermissionError("A different reviewer must make this decision")
+            incident["review_request"] = {
+                "subject": actor.subject,
+                "reason": reason.strip(),
+                "plan_digest": incident["plan"]["digest"],
+            }
+            incident.update(
+                approval=None,
+                lease=None,
+                status="awaiting_approval",
+                checkpoint="approval",
+            )
+            append_event(
+                incident, "changes_requested", actor.subject, reason.strip(), now
             )
 
         return self.store.mutate(actor.tenant, key, change, revision)

@@ -38,6 +38,7 @@ def new_incident(actor, service, title, now):
         "plan_sequence": 0,
         "plan": None,
         "approval": None,
+        "review_request": None,
         "trace": [],
         "receipts": [],
         "checkpoint": "collect",

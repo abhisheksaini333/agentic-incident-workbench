@@ -28,6 +28,13 @@ def review(incident, actor, supplied_digest, now):
     ):
         raise PermissionError("An independent reviewer from this tenant must approve")
     if (
+        incident.get("review_request")
+        and incident["review_request"]["plan_digest"] == supplied_digest
+    ):
+        raise ValueError(
+            "This plan has a change request; edit it before seeking approval"
+        )
+    if (
         incident["status"] != "awaiting_approval"
         or not valid_binding(incident)
         or supplied_digest != incident["plan"]["digest"]

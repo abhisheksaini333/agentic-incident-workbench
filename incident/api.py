@@ -33,6 +33,10 @@ class PlanRequest(RevisionRequest):
     rationale: str = Field(min_length=1, max_length=1000)
 
 
+class ChangesRequest(RevisionRequest):
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class RolesRequest(BaseModel):
     roles: list[str] = Field(max_length=4)
 
@@ -235,5 +239,11 @@ def create_app(store, auth, tools=None):
         except Exception:
             raise HTTPException(503, "Storage is unavailable")
         return {"status": "ready", "simulator_configured": tools is not None}
+
+    @app.post("/api/incidents/{key}/request-changes")
+    def request_changes(key: str, request: ChangesRequest, current=Depends(actor)):
+        return workflow.request_changes(
+            current, key, request.revision, request.reason, time.time()
+        )
 
     return app
