@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Api } from "./api.mjs";
 import { Incident, User, readable } from "./types";
+import { PlanEditor } from "./PlanEditor";
 
 export function PlanPanel({
   api,
@@ -16,7 +17,8 @@ export function PlanPanel({
   onError: (message: string) => void;
 }) {
   const [reviewed, setReviewed] = useState<string | null>(null),
-    [busy, setBusy] = useState(false);
+    [busy, setBusy] = useState(false),
+    [editing, setEditing] = useState(false);
   const plan = incident.plan;
   if (!plan)
     return (
@@ -75,6 +77,24 @@ export function PlanPanel({
         ))}
       </ol>
       <p className="rationale">{plan.rationale}</p>
+      {user.roles.some((role) => ["operator", "admin"].includes(role)) &&
+        ["awaiting_approval", "approved"].includes(incident.status) &&
+        (editing ? (
+          <PlanEditor
+            api={api}
+            incident={incident}
+            onSaved={() => {
+              setEditing(false);
+              onChanged();
+            }}
+            onCancel={() => setEditing(false)}
+            onError={onError}
+          />
+        ) : (
+          <button className="quiet wide" onClick={() => setEditing(true)}>
+            Edit proposed plan
+          </button>
+        ))}
       {incident.status === "awaiting_approval" ? (
         <>
           {canApprove ? (

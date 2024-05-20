@@ -626,3 +626,20 @@ dialog .panel-heading {
   font-size: 10px;
   color: var(--muted);
 }
+
+.plan-editor {
+  border-top: 1px solid var(--line);
+  margin-top: 22px;
+  padding-top: 4px;
+}
+fieldset {
+  border: 1px solid #465c72;
+  margin: 18px 0;
+  padding: 12px 15px 17px;
+  min-width: 0;
+}
+legend {
+  padding: 0 6px;
+  font: 11px "SFMono-Regular", Consolas, monospace;
+  color: var(--cyan);
+}
