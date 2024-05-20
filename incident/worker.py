@@ -1,4 +1,5 @@
 import time
+import httpx
 
 
 class Worker:
@@ -14,6 +15,11 @@ class Worker:
             try:
                 engine.run_until_pause(incident["tenant"], incident["id"])
                 return True
+            except (ConnectionError, TimeoutError, httpx.HTTPError):
+                self.store.defer_transport(
+                    incident["tenant"], incident["id"], self.clock()
+                )
+                continue
             except ValueError:
                 # Another process may have claimed this incident after the scan.
                 continue

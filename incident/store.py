@@ -105,6 +105,8 @@ class Store:
                 incident["budget"]["seconds"] += max(
                     0, min(now, lease["expires_at"]) - lease.get("started_at", now)
                 )
+            incident["transport_failures"] = 0
+            incident["retry_at"] = 0
             incident["lease"] = {
                 "started_at": now,
                 "owner": owner,
@@ -207,11 +209,56 @@ class Store:
                     "executing",
                     "verifying",
                 }:
-                    if not incident["lease"] or incident["lease"]["expires_at"] <= now:
+                    if (
+                        not incident["lease"] or incident["lease"]["expires_at"] <= now
+                    ) and incident.get("retry_at", 0) <= now:
                         active.append(incident)
             return sorted(active, key=lambda item: (item["created_at"], item["id"]))[
                 :limit
             ]
+
+    def defer_transport(self, tenant, key, now):
+        from .trace import append_event
+
+        with self.transaction():
+            incident = self._get(tenant, key)
+            lease = incident.get("lease")
+            if lease and lease["expires_at"] > now:
+                return False
+            if incident["status"] in {
+                "resolved",
+                "cancelled",
+                "escalated",
+                "awaiting_approval",
+            }:
+                return False
+            if lease:
+                incident["budget"]["seconds"] += max(
+                    0, min(now, lease["expires_at"]) - lease.get("started_at", now)
+                )
+                incident["lease"] = None
+            failures = incident.get("transport_failures", 0) + 1
+            incident["transport_failures"] = failures
+            incident["retry_at"] = now + min(2**failures, 30)
+            if failures >= 3:
+                incident.update(
+                    status="escalated",
+                    checkpoint="complete",
+                    error="receipt_unavailable",
+                )
+            append_event(
+                incident,
+                "receipt_retry",
+                "coordinator",
+                "Receipt transport unavailable; uncertainty retained for bounded retry",
+                now,
+            )
+            incident["revision"] += 1
+            self.db.execute(
+                "UPDATE incidents SET body=? WHERE tenant=? AND id=?",
+                (json.dumps(incident), tenant, key),
+            )
+            return True
 
     def close(self):
         with self.lock:
