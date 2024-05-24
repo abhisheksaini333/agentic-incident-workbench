@@ -18,7 +18,8 @@ export function PlanPanel({
 }) {
   const [reviewed, setReviewed] = useState<string | null>(null),
     [busy, setBusy] = useState(false),
-    [editing, setEditing] = useState(false);
+    [editing, setEditing] = useState(false),
+    [changeReason, setChangeReason] = useState("");
   const plan = incident.plan;
   if (!plan)
     return (
@@ -42,6 +43,22 @@ export function PlanPanel({
         body: { revision: incident.revision, digest: plan!.digest },
       });
       setReviewed(null);
+      onChanged();
+    } catch (error) {
+      onError((error as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function requestChanges() {
+    setBusy(true);
+    try {
+      await api.call("/api/incidents/" + incident.id + "/request-changes", {
+        method: "POST",
+        body: { revision: incident.revision, reason: changeReason },
+      });
+      setReviewed(null);
+      setChangeReason("");
       onChanged();
     } catch (error) {
       onError((error as Error).message);
@@ -77,6 +94,12 @@ export function PlanPanel({
         ))}
       </ol>
       <p className="rationale">{plan.rationale}</p>
+      {incident.review_request?.plan_digest === plan.digest && (
+        <p className="warning" role="status">
+          Changes requested by {incident.review_request.subject}:{" "}
+          {incident.review_request.reason}
+        </p>
+      )}
       {user.roles.some((role) => ["operator", "admin"].includes(role)) &&
         ["awaiting_approval", "approved"].includes(incident.status) &&
         (editing ? (
@@ -111,11 +134,34 @@ export function PlanPanel({
               </label>
               <button
                 className="primary wide"
-                disabled={busy || reviewed !== plan.digest}
+                disabled={
+                  busy ||
+                  reviewed !== plan.digest ||
+                  incident.review_request?.plan_digest === plan.digest
+                }
                 onClick={approve}
               >
                 {busy ? "Recording approval…" : "Approve this exact plan"}
               </button>
+              <details className="request-changes">
+                <summary>Request changes instead</summary>
+                <label>
+                  Changes needed
+                  <textarea
+                    value={changeReason}
+                    onChange={(event) => setChangeReason(event.target.value)}
+                    maxLength={500}
+                    rows={3}
+                  />
+                </label>
+                <button
+                  className="quiet"
+                  disabled={busy || !changeReason.trim()}
+                  onClick={requestChanges}
+                >
+                  Send change request
+                </button>
+              </details>
             </>
           ) : (
             <p className="warning">

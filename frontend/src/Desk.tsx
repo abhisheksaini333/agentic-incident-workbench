@@ -5,6 +5,7 @@ import { EvidencePanel } from "./EvidencePanel";
 import { TracePanel } from "./TracePanel";
 import { CreateIncident } from "./CreateIncident";
 import { PlanPanel } from "./PlanPanel";
+import { RecoveryPanel } from "./RecoveryPanel";
 
 function IncidentDetail({
   api,
@@ -105,6 +106,13 @@ function IncidentDetail({
               </p>
             )}
           </section>
+          <RecoveryPanel
+            api={api}
+            incident={incident}
+            user={user}
+            onChanged={onChanged}
+            onError={onError}
+          />
         </aside>
       </div>
     </article>

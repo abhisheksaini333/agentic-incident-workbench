@@ -48,6 +48,11 @@ export type Incident = IncidentSummary & {
     source: string;
   }[];
   plan: Plan | null;
+  review_request?: {
+    subject: string;
+    reason: string;
+    plan_digest: string;
+  } | null;
   approval: { subject: string; expires_at: number } | null;
   trace: {
     id: string;
