@@ -661,3 +661,29 @@ summary {
   text-align: left;
   font-size: 12px;
 }
+
+.admin-panel {
+  margin-bottom: 25px;
+}
+.admin-panel > summary {
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 650;
+}
+.admin-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 35px;
+  margin-top: 22px;
+}
+.admin-columns form {
+  max-width: 450px;
+}
+.admin-columns .check {
+  margin: 10px 0;
+}
+@media (max-width: 750px) {
+  .admin-columns {
+    grid-template-columns: 1fr;
+  }
+}

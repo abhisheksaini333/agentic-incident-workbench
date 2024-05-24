@@ -6,6 +6,7 @@ import { TracePanel } from "./TracePanel";
 import { CreateIncident } from "./CreateIncident";
 import { PlanPanel } from "./PlanPanel";
 import { RecoveryPanel } from "./RecoveryPanel";
+import { AdminPanel } from "./AdminPanel";
 
 function IncidentDetail({
   api,
@@ -161,6 +162,9 @@ export function Desk({
   }, [api, refresh]);
   return (
     <section>
+      {user.roles.includes("admin") && (
+        <AdminPanel api={api} onError={onError} />
+      )}
       <div className="desk-heading">
         <div>
           <p className="eyebrow">YOUR OPERATIONS DESK</p>
