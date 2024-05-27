@@ -39,3 +39,15 @@ test("expired sessions clear credentials and validation errors stay readable", a
     /Title is required/
   );
 });
+
+test("request functions are invoked without an API-instance receiver", async () => {
+  const api = new Api(
+    "token",
+    () => {},
+    async function () {
+      assert.equal(this, undefined);
+      return new Response("{}");
+    }
+  );
+  await api.call("/api/me");
+});

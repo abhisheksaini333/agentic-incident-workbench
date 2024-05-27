@@ -8,7 +8,8 @@ export class Api {
   async call(path, options = {}) {
     if (!path.startsWith("/api/") || path.includes("..") || path.includes("\\"))
       throw new Error("Use an application API path");
-    const response = await this.request(path, {
+    const request = this.request;
+    const response = await request(path, {
       method: options.method || "GET",
       signal: options.signal,
       headers: {
