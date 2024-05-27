@@ -47,7 +47,7 @@ class SimulationRequest(BaseModel):
     variant: int = Field(default=0, ge=0, le=1)
 
 
-def create_app(store, auth, tools=None):
+def create_app(store, auth, tools=None, frontend_dir=None):
     app = FastAPI(title="Incident Workbench")
     app.add_middleware(BodyLimitMiddleware)
     limits = RateLimit()
@@ -245,5 +245,16 @@ def create_app(store, auth, tools=None):
         return workflow.request_changes(
             current, key, request.revision, request.reason, time.time()
         )
+
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+
+    directory = (
+        Path(frontend_dir)
+        if frontend_dir
+        else Path(__file__).resolve().parents[1] / "frontend" / "dist"
+    )
+    if directory.is_dir():
+        app.mount("/", StaticFiles(directory=str(directory), html=True), name="console")
 
     return app
