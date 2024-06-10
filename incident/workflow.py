@@ -9,8 +9,8 @@ class Workflow:
     def __init__(self, store):
         self.store = store
 
-    def create(self, actor, service, title, now):
-        incident = new_incident(actor, service, title, now)
+    def create(self, actor, service, title, now, mode="rules"):
+        incident = new_incident(actor, service, title, now, mode=mode)
         append_event(incident, "opened", actor.subject, "Incident opened", now)
         return self.store.create(incident)
 

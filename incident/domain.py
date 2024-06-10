@@ -18,7 +18,9 @@ TRANSITIONS = {
 }
 
 
-def new_incident(actor, service, title, now):
+def new_incident(actor, service, title, now, mode="rules"):
+    if mode not in {"rules", "single", "graph"}:
+        raise ValueError("Choose rules, single or graph diagnosis")
     require(actor, "collect")
     identifier(service)
     if not isinstance(title, str) or not 1 <= len(title.strip()) <= 160:
@@ -31,6 +33,9 @@ def new_incident(actor, service, title, now):
         "created_by": actor.subject,
         "created_at": now,
         "status": "new",
+        "mode": mode,
+        "model_results": [],
+        "diagnosis_index": 0,
         "revision": 1,
         "evidence": None,
         "evidence_history": [],
