@@ -123,6 +123,7 @@ class Engine:
             current.update(
                 evidence=evidence,
                 hypotheses=[],
+                diagnosis_index=0,
                 plan=None,
                 approval=None,
                 status="diagnosing",
