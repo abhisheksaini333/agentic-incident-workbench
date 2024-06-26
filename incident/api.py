@@ -1,5 +1,5 @@
 import time
-from dataclasses import asdict
+from typing import Literal
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
@@ -16,6 +16,7 @@ class LoginRequest(BaseModel):
 
 
 class IncidentRequest(BaseModel):
+    mode: Literal["rules", "single", "graph"] = "rules"
     service: str = Field(min_length=2, max_length=48)
     title: str = Field(min_length=1, max_length=160)
 
@@ -47,7 +48,7 @@ class SimulationRequest(BaseModel):
     variant: int = Field(default=0, ge=0, le=1)
 
 
-def create_app(store, auth, tools=None, frontend_dir=None):
+def create_app(store, auth, tools=None, frontend_dir=None, model_enabled=False):
     app = FastAPI(title="Incident Workbench")
     app.add_middleware(BodyLimitMiddleware)
     limits = RateLimit()
@@ -157,7 +158,13 @@ def create_app(store, auth, tools=None, frontend_dir=None):
 
     @app.post("/api/incidents", status_code=201)
     def create(request: IncidentRequest, current=Depends(actor)):
-        return workflow.create(current, request.service, request.title, time.time())
+        if request.mode != "rules" and not model_enabled:
+            raise HTTPException(
+                503, "Configure the model worker before selecting model diagnosis"
+            )
+        return workflow.create(
+            current, request.service, request.title, time.time(), mode=request.mode
+        )
 
     @app.put("/api/incidents/{key}/plan")
     def edit(key: str, request: PlanRequest, current=Depends(actor)):
@@ -216,7 +223,7 @@ def create_app(store, auth, tools=None, frontend_dir=None):
     @app.get("/api/config")
     def configuration():
         return {
-            "modes": ["rules"],
+            "modes": ["rules", "single", "graph"] if model_enabled else ["rules"],
             "services": [
                 "heap-api",
                 "busy-api",
