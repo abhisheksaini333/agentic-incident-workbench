@@ -11,7 +11,8 @@ from .api import create_app
 from .simulator import Simulator
 from .simulator_api import create_simulator_app
 from .simulator_client import SimulatorClient
-from .engine import Engine
+from .runners import runner_for
+from .model_client import ModelClient
 from .worker import Worker
 from .demo import seed_demo
 
@@ -47,13 +48,24 @@ def main():
         settings.simulator_admin_key or None,
     )
     auth = AuthManager(store, settings.jwt_secret)
+    model = (
+        ModelClient(os.environ["MODEL_URL"], os.environ["MODEL_KEY"])
+        if os.getenv("MODEL_URL") and os.getenv("MODEL_KEY")
+        else None
+    )
     try:
         if args.command == "seed":
             print(json.dumps(seed_demo(auth, tools, os.environ["DEMO_PASSWORD"])))
         elif args.command == "api":
-            uvicorn.run(create_app(store, auth, tools), host=args.host, port=args.port)
+            uvicorn.run(
+                create_app(store, auth, tools, model_enabled=model is not None),
+                host=args.host,
+                port=args.port,
+            )
         else:
-            worker = Worker(store, lambda incident: Engine(store, tools))
+            worker = Worker(
+                store, lambda incident: runner_for(store, tools, incident, model)
+            )
             if args.once:
                 print(json.dumps({"worked": worker.once()}))
             else:
@@ -63,4 +75,6 @@ def main():
                 worker.run(stop)
     finally:
         tools.close()
+        if model is not None:
+            model.close()
         store.close()
