@@ -1,4 +1,3 @@
-import json
 import re
 from .diagnosis import SIGNALS, supported
 
@@ -18,24 +17,18 @@ THRESHOLDS = {
 
 
 def build_prompt(evidence, labels, role):
-    metrics = {SIGNALS[label][0] for label in labels}
-    observations = [
-        item
-        for item in evidence["observations"]
-        if item["kind"] == "metric" and item["name"] in metrics
-    ]
-    # Logs remain visible to people, but untrusted log instructions are excluded
-    # from the bounded metric-classification prompt.
+    # Calibration uses the model's language classification capability. Logs are
+    # untrusted observations: generated labels still pass deterministic metric
+    # support checks before any plan can exist, and humans approve all effects.
+    logs = " ".join(
+        item["text"][:180] for item in evidence["observations"] if item["kind"] == "log"
+    )[:720]
     return (
-        "Classify an incident from measured evidence. You are the "
-        + role
-        + " reviewer. "
-        "Return only matching labels separated by commas, or none. Do not invent labels.\n"
-        + "Rules: "
-        + "; ".join(label + " if " + THRESHOLDS[label] for label in labels)
-        + "\nEvidence with reference identifiers: "
-        + json.dumps(observations, sort_keys=True)
-        + "\nMatching labels:"
+        "Classify this incident: "
+        + logs
+        + " Options: "
+        + ", ".join(labels)
+        + ", none. Answer:"
     )
 
 

@@ -15,6 +15,7 @@ def test_untrusted_output_cannot_create_unsupported_or_out_of_role_actions():
     assert rejected == 2
     assert result[0]["references"] == ["metric:memory_percent"]
     prompt = build_prompt(evidence, labels, "capacity")
-    assert "reference" in prompt and "memory_percent" in prompt
+    assert "Resident pages climb" in prompt
+    assert len(prompt) < 1200
     assert "delete_database" not in prompt
     assert parse_diagnosis("none", labels, evidence, "capacity") == ([], 0)
