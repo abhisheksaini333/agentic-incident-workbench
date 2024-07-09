@@ -1,0 +1,130 @@
+{
+  "schema_version": 1,
+  "calibration": [
+    {
+      "id": "cal-0",
+      "faults": [
+        "memory_pressure"
+      ],
+      "variant": 0
+    },
+    {
+      "id": "cal-1",
+      "faults": [
+        "cpu_saturation"
+      ],
+      "variant": 0
+    },
+    {
+      "id": "cal-2",
+      "faults": [
+        "bad_release"
+      ],
+      "variant": 0
+    },
+    {
+      "id": "cal-3",
+      "faults": [
+        "dependency_outage"
+      ],
+      "variant": 0
+    },
+    {
+      "id": "cal-4",
+      "faults": [
+        "disk_pressure"
+      ],
+      "variant": 0
+    },
+    {
+      "id": "cal-5",
+      "faults": [
+        "queue_backlog"
+      ],
+      "variant": 0
+    }
+  ],
+  "held_out": [
+    {
+      "id": "held-0",
+      "faults": [
+        "memory_pressure"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-1",
+      "faults": [
+        "cpu_saturation"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-2",
+      "faults": [
+        "bad_release"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-3",
+      "faults": [
+        "dependency_outage"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-4",
+      "faults": [
+        "disk_pressure"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-5",
+      "faults": [
+        "queue_backlog"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-6",
+      "faults": [
+        "memory_pressure",
+        "bad_release"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-7",
+      "faults": [
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-8",
+      "faults": [
+        "dependency_outage",
+        "disk_pressure"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-9",
+      "faults": [
+        "memory_pressure",
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "variant": 1
+    },
+    {
+      "id": "held-10",
+      "faults": [],
+      "variant": 1
+    }
+  ],
+  "notes": "Fixed original simulator cases. Held-out wording and combinations are separate from prompt calibration; fault families and numerical runbooks are shared. This is a bounded lab comparison, not evidence of general incident response quality."
+}
