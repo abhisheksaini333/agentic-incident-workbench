@@ -14,6 +14,8 @@ export function CreateIncident({
   const dialog = useRef<HTMLDialogElement>(null);
   const [services, setServices] = useState<string[]>([]),
     [service, setService] = useState("heap-api"),
+    [modes, setModes] = useState<string[]>(["rules"]),
+    [mode, setMode] = useState("rules"),
     [title, setTitle] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -23,7 +25,10 @@ export function CreateIncident({
     api
       .call("/api/config")
       .then((config) => {
-        if (active) setServices(config.services);
+        if (active) {
+          setServices(config.services);
+          setModes(config.modes);
+        }
       })
       .catch((error) => {
         if (active) setError(error.message);
@@ -39,7 +44,7 @@ export function CreateIncident({
     try {
       const incident = await api.call("/api/incidents", {
         method: "POST",
-        body: { service, title },
+        body: { service, title, mode },
       });
       onCreated(incident);
     } catch (error) {
@@ -95,7 +100,29 @@ export function CreateIncident({
             autoFocus
           />
         </label>
-        <p className="small muted">Diagnosis mode: rules baseline</p>
+        <label>
+          Diagnosis approach
+          <select
+            value={mode}
+            onChange={(event) => setMode(event.target.value)}
+          >
+            {modes.map((item) => (
+              <option key={item} value={item}>
+                {
+                  {
+                    rules: "Runbook rules",
+                    single: "One model reviewer",
+                    graph: "Three specialist reviewers",
+                  }[item]
+                }
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="small muted">
+          Runbook rules are the default. Model reviewers can abstain; every
+          proposed action still needs independent human approval.
+        </p>
         {error && (
           <p className="error" role="alert">
             {error}
