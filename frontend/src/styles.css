@@ -687,3 +687,12 @@ summary {
     grid-template-columns: 1fr;
   }
 }
+
+.model-results {
+  margin-top: 1rem;
+}
+.model-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}

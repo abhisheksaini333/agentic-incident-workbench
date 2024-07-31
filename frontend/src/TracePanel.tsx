@@ -34,6 +34,33 @@ export function TracePanel({ incident }: { incident: Incident }) {
           </li>
         ))}
       </ol>
+      {Boolean(incident.model_results?.length) && (
+        <details className="model-results">
+          <summary>Model review records</summary>
+          {incident.model_results!.map((result, index) => (
+            <article className="hypothesis" key={index}>
+              <strong>
+                {readable(result.role)} / snapshot {result.evidence_version}
+              </strong>
+              <p>
+                Accepted:{" "}
+                {result.accepted.map(readable).join(", ") ||
+                  "No supported diagnosis"}
+              </p>
+              <p className="small muted">
+                {result.rejected} rejected outputs · {result.input_tokens} input
+                tokens · {result.output_tokens} output tokens
+              </p>
+              <details>
+                <summary>Generated text</summary>
+                <pre className="model-text">
+                  {result.text || "(empty response)"}
+                </pre>
+              </details>
+            </article>
+          ))}
+        </details>
+      )}
       <div className="usage">
         <span>{incident.budget.steps} steps</span>
         <span>{incident.budget.model_calls} model calls</span>

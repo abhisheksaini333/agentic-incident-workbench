@@ -39,6 +39,17 @@ export type Incident = IncidentSummary & {
   tenant: string;
   created_by: string;
   mode?: string;
+  model_results?: {
+    role: string;
+    text: string;
+    input_tokens: number;
+    output_tokens: number;
+    revision: string;
+    evidence_version: number;
+    evidence_digest: string;
+    rejected: number;
+    accepted: string[];
+  }[];
   evidence: Evidence | null;
   evidence_history: Evidence[];
   hypotheses: {
