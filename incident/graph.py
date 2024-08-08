@@ -18,6 +18,7 @@ class GraphRunner:
     """
 
     STAGES = ("collect", "diagnose", "plan", "execute", "verify")
+    SPECIALISTS = ("capacity", "change_and_dependency", "storage_and_queue")
     PAUSED = {"awaiting_approval", "resolved", "escalated", "cancelled"}
 
     def __init__(self, engine):
@@ -25,24 +26,34 @@ class GraphRunner:
         graph = StateGraph(Cursor)
         graph.add_node("route", self._route)
         graph.set_entry_point("route")
-        for stage in self.STAGES:
-            graph.add_node(stage, self._node(stage))
+        for stage in (*self.STAGES, *self.SPECIALISTS):
+            expected = "diagnose" if stage in self.SPECIALISTS else stage
+            graph.add_node(stage, self._node(expected))
             graph.add_edge(stage, "route")
         graph.add_conditional_edges(
             "route",
             self._next,
-            {**{stage: stage for stage in self.STAGES}, "stop": END},
+            {
+                **{stage: stage for stage in (*self.STAGES, *self.SPECIALISTS)},
+                "stop": END,
+            },
         )
         self.compiled = graph.compile()
 
     def _route(self, state):
         item = self.engine.store.get(state["tenant"], state["incident_id"])
-        return {"stage": item["checkpoint"], "paused": item["status"] in self.PAUSED}
+        stage = item["checkpoint"]
+        if stage == "diagnose" and item.get("mode") == "graph":
+            index = item.get("diagnosis_index", 0)
+            if not 0 <= index < len(self.SPECIALISTS):
+                raise ValueError("Invalid specialist checkpoint")
+            stage = self.SPECIALISTS[index]
+        return {"stage": stage, "paused": item["status"] in self.PAUSED}
 
     def _next(self, state):
         if state["paused"]:
             return "stop"
-        if state["stage"] not in self.STAGES:
+        if state["stage"] not in (*self.STAGES, *self.SPECIALISTS):
             raise ValueError("Unknown persisted graph stage")
         return state["stage"]
 
