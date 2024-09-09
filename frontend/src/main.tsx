@@ -18,19 +18,26 @@ function App() {
     [token]
   );
   useEffect(() => {
-    let active = true;
+    let active = true,
+      busy = false;
     setUser(null);
-    if (token)
-      api
-        .call("/api/me")
-        .then((data) => {
-          if (active) setUser(data);
-        })
-        .catch((error) => {
-          if (active) setError(error.message);
-        });
+    const load = async () => {
+      if (!token || busy) return;
+      busy = true;
+      try {
+        const data = await api.call("/api/me");
+        if (active) setUser(data);
+      } catch (error) {
+        if (active) setError((error as Error).message);
+      } finally {
+        busy = false;
+      }
+    };
+    load();
+    const interval = setInterval(load, 10000);
     return () => {
       active = false;
+      clearInterval(interval);
     };
   }, [api, token]);
   async function logout() {
