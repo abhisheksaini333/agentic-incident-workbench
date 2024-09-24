@@ -82,7 +82,7 @@ def create_simulator_app(simulator, worker_key, admin_key):
     @app.get("/v1/{tenant}/{service}/effects/{key}", dependencies=[Depends(worker)])
     def receipt(tenant: str, service: str, key: str):
         result = simulator.receipt(tenant, key)
-        if result is None:
+        if result is None or result.get("service") != service:
             raise HTTPException(404, "Receipt not found")
         return result
 

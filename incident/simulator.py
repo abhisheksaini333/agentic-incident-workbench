@@ -122,6 +122,7 @@ class Simulator:
             receipt = {
                 "key": key,
                 "request_digest": request_digest,
+                "service": service,
                 "action": checked["action"],
                 "generation_before": expected_generation,
                 "generation_after": state["generation"],
