@@ -1,3 +1,4 @@
+import re
 import httpx
 from .identity import identifier
 from .plans import validate_step
@@ -40,6 +41,8 @@ class SimulatorClient:
         )
 
     def receipt(self, tenant, service, key):
+        if not isinstance(key, str) or not re.fullmatch(r"[A-Za-z0-9_-]{16,100}", key):
+            raise ValueError("Invalid effect receipt key")
         response = self.client.get(
             self.path(tenant, service) + "/effects/" + key, headers=self.worker_headers
         )
