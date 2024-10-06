@@ -1,0 +1,99 @@
+name: incident-workbench
+x-application: &application
+  image: incident-workbench:local
+  build: .
+  init: true
+  restart: on-failure:3
+  environment: &environment
+    DATABASE_URL: postgresql://incident:${POSTGRES_PASSWORD:?Run init_demo.py}@postgres:5432/incident
+    JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+    SIMULATOR_URL: http://simulator:8086
+    SIMULATOR_KEY: ${SIMULATOR_KEY:?Set SIMULATOR_KEY}
+    SIMULATOR_ADMIN_KEY: ${SIMULATOR_ADMIN_KEY:?Set SIMULATOR_ADMIN_KEY}
+    MODEL_URL: http://model:8087
+    MODEL_KEY: ${MODEL_KEY:?Set MODEL_KEY}
+    ENABLE_MODEL_MODES: ${ENABLE_MODEL_MODES:-0}
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  read_only: true
+  tmpfs: [/tmp]
+
+services:
+  postgres:
+    image: postgres:16.1-alpine
+    environment:
+      POSTGRES_USER: incident
+      POSTGRES_DB: incident
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run init_demo.py}
+    volumes: [postgres-data:/var/lib/postgresql/data]
+    ports: [127.0.0.1:54385:5432]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U incident -d incident]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  simulator:
+    <<: *application
+    command: [python, -m, incident, simulator, --host, 0.0.0.0, --port, '8086']
+    environment:
+      SIMULATOR_DB: /app/data/simulator.db
+      SIMULATOR_KEY: ${SIMULATOR_KEY:?Set SIMULATOR_KEY}
+      SIMULATOR_ADMIN_KEY: ${SIMULATOR_ADMIN_KEY:?Set SIMULATOR_ADMIN_KEY}
+    volumes: [simulator-data:/app/data]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request;urllib.request.urlopen('http://localhost:8086/health')"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  api:
+    <<: *application
+    ports: [127.0.0.1:8085:8085]
+    depends_on:
+      postgres: {condition: service_healthy}
+      simulator: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request;urllib.request.urlopen('http://localhost:8085/ready')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  worker:
+    <<: *application
+    command: [python, -m, incident, worker]
+    depends_on:
+      postgres: {condition: service_healthy}
+      simulator: {condition: service_healthy}
+  seed:
+    <<: *application
+    profiles: [setup]
+    restart: 'no'
+    command: [python, -m, incident, seed]
+    environment:
+      <<: *environment
+      DEMO_PASSWORD: ${DEMO_PASSWORD:?Set DEMO_PASSWORD}
+    depends_on:
+      postgres: {condition: service_healthy}
+      simulator: {condition: service_healthy}
+  model:
+    profiles: [models]
+    platform: linux/amd64
+    build:
+      context: .
+      dockerfile: model/Dockerfile
+    image: incident-model:local
+    init: true
+    environment:
+      MODEL_KEY: ${MODEL_KEY:?Set MODEL_KEY}
+    volumes: [./models/flan-t5-small:/models/flan-t5-small:ro]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    read_only: true
+    tmpfs: [/tmp]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request;urllib.request.urlopen('http://localhost:8087/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 20
+      start_period: 30s
+volumes:
+  postgres-data:
+  simulator-data:

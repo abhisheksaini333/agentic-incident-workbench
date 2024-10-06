@@ -50,7 +50,9 @@ def main():
     auth = AuthManager(store, settings.jwt_secret)
     model = (
         ModelClient(os.environ["MODEL_URL"], os.environ["MODEL_KEY"])
-        if os.getenv("MODEL_URL") and os.getenv("MODEL_KEY")
+        if os.getenv("ENABLE_MODEL_MODES", "1") == "1"
+        and os.getenv("MODEL_URL")
+        and os.getenv("MODEL_KEY")
         else None
     )
     try:
