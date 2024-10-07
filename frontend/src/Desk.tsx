@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
+import { mergeQueue, mergeSnapshot } from "./queue.mjs";
 import { Api } from "./api.mjs";
 import { Incident, IncidentSummary, User, readable } from "./types";
 import { EvidencePanel } from "./EvidencePanel";
@@ -15,6 +16,7 @@ function IncidentDetail({
   onError,
   onChanged,
   refresh,
+  onSnapshot,
 }: {
   api: Api;
   id: string;
@@ -22,6 +24,7 @@ function IncidentDetail({
   onError: (message: string) => void;
   onChanged: () => void;
   refresh: number;
+  onSnapshot: (snapshot: Incident) => void;
 }) {
   const [incident, setIncident] = useState<Incident | null>(null);
   useEffect(() => {
@@ -35,7 +38,10 @@ function IncidentDetail({
         const result = await api.call("/api/incidents/" + id, {
           signal: controller.signal,
         });
-        if (active) setIncident(result);
+        if (active) {
+          setIncident(result);
+          onSnapshot(result);
+        }
       } catch (error) {
         if (active && (error as Error).name !== "AbortError")
           onError((error as Error).message);
@@ -50,7 +56,7 @@ function IncidentDetail({
       controller.abort();
       clearInterval(interval);
     };
-  }, [api, id, refresh]);
+  }, [api, id, refresh, onSnapshot]);
   if (!incident)
     return (
       <div className="empty" role="status">
@@ -133,6 +139,10 @@ export function Desk({
     [selected, setSelected] = useState(""),
     [refresh, setRefresh] = useState(0),
     [creating, setCreating] = useState(false);
+  const updateSummary = useCallback(
+    (snapshot: Incident) => setItems((items) => mergeSnapshot(items, snapshot)),
+    []
+  );
   useEffect(() => {
     let active = true,
       busy = false;
@@ -144,7 +154,7 @@ export function Desk({
         const data = await api.call("/api/incidents", {
           signal: controller.signal,
         });
-        if (active) setItems(data.incidents);
+        if (active) setItems((current) => mergeQueue(current, data.incidents));
       } catch (error) {
         if (active && (error as Error).name !== "AbortError")
           onError((error as Error).message);
@@ -224,6 +234,7 @@ export function Desk({
             user={user}
             onError={onError}
             refresh={refresh}
+            onSnapshot={updateSummary}
             onChanged={() => setRefresh((value) => value + 1)}
           />
         ) : (
