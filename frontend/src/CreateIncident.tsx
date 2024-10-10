@@ -111,8 +111,8 @@ export function CreateIncident({
                 {
                   {
                     rules: "Runbook rules",
-                    single: "One model reviewer",
-                    graph: "Three specialist reviewers",
+                    single: "One model reviewer (experimental)",
+                    graph: "Three specialist reviewers (experimental)",
                   }[item]
                 }
               </option>
