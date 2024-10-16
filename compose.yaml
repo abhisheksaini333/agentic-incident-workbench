@@ -83,7 +83,7 @@ services:
     init: true
     environment:
       MODEL_KEY: ${MODEL_KEY:?Set MODEL_KEY}
-    volumes: [./models/flan-t5-small:/models/flan-t5-small:ro]
+    volumes: [${MODEL_WEIGHTS_DIR:-./models/flan-t5-small}:/models/flan-t5-small:ro]
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     read_only: true
