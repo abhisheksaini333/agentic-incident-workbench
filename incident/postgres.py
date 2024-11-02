@@ -32,4 +32,9 @@ class PostgresStore(Store):
         self.schema = schema
         self.db = Connection(url, schema)
         self.lock = threading.RLock()
-        self._schema()
+        try:
+            with self.transaction():
+                self._schema()
+        except BaseException:
+            self.db.close()
+            raise
