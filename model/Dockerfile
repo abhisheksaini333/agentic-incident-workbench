@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY model/ ./model/
 COPY models/manifest.json ./models/manifest.json
 RUN useradd --uid 10001 --create-home model
+ENV TRANSFORMERS_CACHE=/tmp/huggingface HF_HUB_OFFLINE=1
 USER model
 EXPOSE 8087
 CMD ["python", "model/server.py", "--host", "0.0.0.0", "--directory", "/models/flan-t5-small"]
