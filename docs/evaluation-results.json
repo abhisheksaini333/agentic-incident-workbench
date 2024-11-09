@@ -1,0 +1,570 @@
+{
+  "measured_source_sha": "bdeedf1b87fb28a779136d31759463ca1ac40593",
+  "corpus_sha256": "63918c145074c9698d55ab0ce57ad5a4d11169da658a6cbe2767f9e351b884e6",
+  "model_revision": "371f99f1df1429771f01227c93bd662f5eec2480",
+  "hardware": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "logical_cpus": 11,
+    "model_threads": 2,
+    "cpu": "Apple M3 Pro",
+    "memory_gib": 18
+  },
+  "summary": {
+    "rules": {
+      "cases": 11,
+      "recovered": 11,
+      "unnecessary_actions": 0,
+      "effects": 15,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "median_seconds": 0.09681808296591043,
+      "p95_seconds": 0.32335299998521805,
+      "statuses": {
+        "resolved": 11
+      }
+    },
+    "single": {
+      "cases": 11,
+      "recovered": 1,
+      "unnecessary_actions": 0,
+      "effects": 2,
+      "model_calls": 10,
+      "input_tokens": 630,
+      "output_tokens": 42,
+      "median_seconds": 0.07537258393131196,
+      "p95_seconds": 0.6299216251354665,
+      "statuses": {
+        "escalated": 10,
+        "resolved": 1
+      }
+    },
+    "graph": {
+      "cases": 11,
+      "recovered": 4,
+      "unnecessary_actions": 0,
+      "effects": 6,
+      "model_calls": 30,
+      "input_tokens": 1290,
+      "output_tokens": 131,
+      "median_seconds": 0.2666874590795487,
+      "p95_seconds": 0.7746914159506559,
+      "statuses": {
+        "resolved": 4,
+        "escalated": 7
+      }
+    }
+  },
+  "limitations": [
+    "Original bounded simulator, not production incident quality",
+    "One measured run per case; no statistical significance claim",
+    "Benchmark reviewer approves supported plans; real users require independent approval",
+    "All modes share the same metrics, action authority and verification gates"
+  ],
+  "rows": [
+    {
+      "case": "held-0",
+      "mode": "rules",
+      "faults": [
+        "memory_pressure"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.09681808296591043,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-0",
+      "mode": "single",
+      "faults": [
+        "memory_pressure"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.6299216251354665,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 57,
+      "output_tokens": 2
+    },
+    {
+      "case": "held-0",
+      "mode": "graph",
+      "faults": [
+        "memory_pressure"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.7746914159506559,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 3,
+      "input_tokens": 111,
+      "output_tokens": 13
+    },
+    {
+      "case": "held-1",
+      "mode": "single",
+      "faults": [
+        "cpu_saturation"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.07235675002448261,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 57,
+      "output_tokens": 4
+    },
+    {
+      "case": "held-1",
+      "mode": "graph",
+      "faults": [
+        "cpu_saturation"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.20558399986475706,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 3,
+      "input_tokens": 111,
+      "output_tokens": 8
+    },
+    {
+      "case": "held-1",
+      "mode": "rules",
+      "faults": [
+        "cpu_saturation"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.0783678749576211,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-2",
+      "mode": "graph",
+      "faults": [
+        "bad_release"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.2666874590795487,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 3,
+      "input_tokens": 111,
+      "output_tokens": 15
+    },
+    {
+      "case": "held-2",
+      "mode": "rules",
+      "faults": [
+        "bad_release"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.07690674997866154,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-2",
+      "mode": "single",
+      "faults": [
+        "bad_release"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.07537258393131196,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 57,
+      "output_tokens": 2
+    },
+    {
+      "case": "held-3",
+      "mode": "rules",
+      "faults": [
+        "dependency_outage"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.08931162487715483,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-3",
+      "mode": "single",
+      "faults": [
+        "dependency_outage"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.08889312506653368,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 53,
+      "output_tokens": 4
+    },
+    {
+      "case": "held-3",
+      "mode": "graph",
+      "faults": [
+        "dependency_outage"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.2387234999332577,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 3,
+      "input_tokens": 99,
+      "output_tokens": 11
+    },
+    {
+      "case": "held-4",
+      "mode": "single",
+      "faults": [
+        "disk_pressure"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.06611408316530287,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 55,
+      "output_tokens": 2
+    },
+    {
+      "case": "held-4",
+      "mode": "graph",
+      "faults": [
+        "disk_pressure"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.23617699998430908,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 3,
+      "input_tokens": 105,
+      "output_tokens": 12
+    },
+    {
+      "case": "held-4",
+      "mode": "rules",
+      "faults": [
+        "disk_pressure"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.07367587508633733,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-5",
+      "mode": "graph",
+      "faults": [
+        "queue_backlog"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.33333850000053644,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 3,
+      "input_tokens": 108,
+      "output_tokens": 14
+    },
+    {
+      "case": "held-5",
+      "mode": "rules",
+      "faults": [
+        "queue_backlog"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.13149620802141726,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-5",
+      "mode": "single",
+      "faults": [
+        "queue_backlog"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.07497887499630451,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 56,
+      "output_tokens": 2
+    },
+    {
+      "case": "held-6",
+      "mode": "rules",
+      "faults": [
+        "memory_pressure",
+        "bad_release"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.32335299998521805,
+      "unnecessary_actions": 0,
+      "effects": 2,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-6",
+      "mode": "single",
+      "faults": [
+        "memory_pressure",
+        "bad_release"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.1552444170229137,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 72,
+      "output_tokens": 8
+    },
+    {
+      "case": "held-6",
+      "mode": "graph",
+      "faults": [
+        "memory_pressure",
+        "bad_release"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.27251720894128084,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 3,
+      "input_tokens": 156,
+      "output_tokens": 18
+    },
+    {
+      "case": "held-7",
+      "mode": "single",
+      "faults": [
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.21381766605190933,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 1,
+      "input_tokens": 71,
+      "output_tokens": 8
+    },
+    {
+      "case": "held-7",
+      "mode": "graph",
+      "faults": [
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.4798683749977499,
+      "unnecessary_actions": 0,
+      "effects": 2,
+      "model_calls": 3,
+      "input_tokens": 153,
+      "output_tokens": 15
+    },
+    {
+      "case": "held-7",
+      "mode": "rules",
+      "faults": [
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.11321262503042817,
+      "unnecessary_actions": 0,
+      "effects": 2,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-8",
+      "mode": "graph",
+      "faults": [
+        "dependency_outage",
+        "disk_pressure"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.22181512508541346,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 3,
+      "input_tokens": 138,
+      "output_tokens": 11
+    },
+    {
+      "case": "held-8",
+      "mode": "rules",
+      "faults": [
+        "dependency_outage",
+        "disk_pressure"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.11495241709053516,
+      "unnecessary_actions": 0,
+      "effects": 2,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-8",
+      "mode": "single",
+      "faults": [
+        "dependency_outage",
+        "disk_pressure"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.0626543341204524,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 1,
+      "input_tokens": 66,
+      "output_tokens": 2
+    },
+    {
+      "case": "held-9",
+      "mode": "rules",
+      "faults": [
+        "memory_pressure",
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.15614616707898676,
+      "unnecessary_actions": 0,
+      "effects": 3,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-9",
+      "mode": "single",
+      "faults": [
+        "memory_pressure",
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.13692966708913445,
+      "unnecessary_actions": 0,
+      "effects": 1,
+      "model_calls": 1,
+      "input_tokens": 86,
+      "output_tokens": 8
+    },
+    {
+      "case": "held-9",
+      "mode": "graph",
+      "faults": [
+        "memory_pressure",
+        "cpu_saturation",
+        "queue_backlog"
+      ],
+      "status": "escalated",
+      "recovered": false,
+      "seconds": 0.4066655831411481,
+      "unnecessary_actions": 0,
+      "effects": 2,
+      "model_calls": 3,
+      "input_tokens": 198,
+      "output_tokens": 14
+    },
+    {
+      "case": "held-10",
+      "mode": "single",
+      "faults": [],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.02443608408793807,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-10",
+      "mode": "graph",
+      "faults": [],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.07420045789331198,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    },
+    {
+      "case": "held-10",
+      "mode": "rules",
+      "faults": [],
+      "status": "resolved",
+      "recovered": true,
+      "seconds": 0.025661165826022625,
+      "unnecessary_actions": 0,
+      "effects": 0,
+      "model_calls": 0,
+      "input_tokens": 0,
+      "output_tokens": 0
+    }
+  ]
+}
