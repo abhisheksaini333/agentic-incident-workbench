@@ -25,7 +25,7 @@ class Store:
             "CREATE TABLE IF NOT EXISTS accounts(subject TEXT PRIMARY KEY,tenant TEXT NOT NULL,body TEXT NOT NULL)"
         )
         self.db.execute(
-            "CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,subject TEXT NOT NULL,expires REAL NOT NULL,revoked INTEGER NOT NULL)"
+            "CREATE TABLE IF NOT EXISTS sessions(id TEXT PRIMARY KEY,subject TEXT NOT NULL,expires DOUBLE PRECISION NOT NULL,revoked INTEGER NOT NULL)"
         )
 
         self.db.execute(
