@@ -6,6 +6,8 @@ The console includes an incident queue, evidence history, diagnosis records, a p
 
 **Runbook rules are the default.** Optional FLAN-T5 reviewers and an original LangGraph specialist workflow support controlled experiments. On the same eleven held-out incidents, rules recovered 11, a single model recovered 1 and the graph recovered 4. [Read the comparison](docs/evaluation.md) before enabling model modes.
 
+![Reviewed incident with evidence, model records and a recovery receipt](docs/images/incident-console.png)
+
 ## Start the local stack
 
 Requirements: Docker with Compose, Python 3.10+ for setup and enough free memory for the optional model. The original model container targets Linux AMD64; Apple Silicon uses Docker emulation.

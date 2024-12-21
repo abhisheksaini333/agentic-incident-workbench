@@ -24,7 +24,7 @@ With the model profile healthy:
 ```sh
 mkdir -p artifacts
 docker compose exec -T api python scripts/crash_probe.py --output /tmp/process-crash.json
-docker compose cp api:/tmp/process-crash.json artifacts/process-crash.json
+docker compose exec -T api cat /tmp/process-crash.json > artifacts/process-crash.json
 ```
 
 The probe creates a disposable schema and tenant, kills one real worker process while it waits for a decision, approves the persisted plan, exits another process after the actual simulator effect but before local acknowledgement, waits for the real lease to expire, then resumes from a new process. Acceptance requires one external effect, one durable receipt, a recovered workload and no repeated completed model calls. It does not alter existing application incidents. Preserve a failed report or process log before retrying.
@@ -39,7 +39,7 @@ mkdir -p backups
 docker compose stop api worker
 docker compose exec -T postgres pg_dump -U incident -d incident -Fc > backups/incidents.dump
 docker compose exec -T simulator python -c 'import sqlite3; source=sqlite3.connect("/app/data/simulator.db"); target=sqlite3.connect("/tmp/simulator-backup.db"); source.backup(target); target.close(); source.close()'
-docker compose cp simulator:/tmp/simulator-backup.db backups/simulator.db
+docker compose exec -T simulator cat /tmp/simulator-backup.db > backups/simulator.db
 docker compose start api worker
 ```
 

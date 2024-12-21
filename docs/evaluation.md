@@ -27,7 +27,7 @@ Start the optional model profile as described in the README, then:
 ```sh
 mkdir -p artifacts
 docker compose exec -T api python -m incident.evaluation --output /tmp/comparison.json
-docker compose cp api:/tmp/comparison.json artifacts/comparison.json
+docker compose exec -T api cat /tmp/comparison.json > artifacts/comparison.json
 ```
 
 Each run creates a unique PostgreSQL schema and unique simulator tenants. Existing application incidents are retained. Review the report's `database_schema` before explicitly removing a disposable run; do not remove the application `public` schema. New models or prompts must be selected on calibration data and measured on a newly frozen held-out set.
