@@ -3,10 +3,21 @@ import argparse
 import json
 from pathlib import Path
 import sys
+import ssl
 import urllib.request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from model.server import verify_files
+
+
+def trusted_context():
+    context = ssl.create_default_context()
+    # Python.org macOS installations may lack their optional certificate setup.
+    # Add the operating system's public CA bundle without weakening verification.
+    system_bundle = Path("/etc/ssl/cert.pem")
+    if sys.platform == "darwin" and system_bundle.is_file():
+        context.load_verify_locations(cafile=str(system_bundle))
+    return context
 
 
 def main():
