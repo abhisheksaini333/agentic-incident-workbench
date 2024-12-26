@@ -29,6 +29,7 @@ def main():
     manifest = json.loads(
         (Path(__file__).resolve().parents[1] / "models/manifest.json").read_text()
     )
+    context = trusted_context()
     for item in manifest:
         target = directory / item["file"]
         if target.exists():
@@ -36,7 +37,7 @@ def main():
             continue
         temporary = target.with_suffix(target.suffix + ".partial")
         with urllib.request.urlopen(
-            item["url"], timeout=60
+            item["url"], timeout=60, context=context
         ) as response, temporary.open("wb") as output:
             while True:
                 chunk = response.read(1024 * 1024)
