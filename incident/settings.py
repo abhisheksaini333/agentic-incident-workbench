@@ -1,15 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import os
 from urllib.parse import urlparse
 
 
 @dataclass(frozen=True)
 class Settings:
-    database_url: str = "sqlite:///data/incidents.db"
-    jwt_secret: str = ""
+    database_url: str = field(default="sqlite:///data/incidents.db", repr=False)
+    jwt_secret: str = field(default="", repr=False)
     simulator_url: str = "http://localhost:8086"
-    simulator_key: str = ""
-    simulator_admin_key: str = ""
+    simulator_key: str = field(default="", repr=False)
+    simulator_admin_key: str = field(default="", repr=False)
 
     def __post_init__(self):
         if len(self.jwt_secret) < 32 or len(self.simulator_key) < 24:
