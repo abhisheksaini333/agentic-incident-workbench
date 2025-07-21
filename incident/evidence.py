@@ -21,7 +21,10 @@ def digest(value):
 
 def snapshot(payload, version):
     if (
-        type(payload.get("generation")) is not int
+        not isinstance(payload, dict)
+        or type(version) is not int
+        or type(payload.get("healthy", False)) is not bool
+        or type(payload.get("generation")) is not int
         or payload["generation"] < 1
         or version < 1
     ):
