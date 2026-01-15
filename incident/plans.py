@@ -12,8 +12,10 @@ ACTIONS = {
 
 
 def validate_step(step, service):
-    if set(step) != {"action", "target", "arguments"} or step["target"] != service:
+    if not isinstance(step, dict) or set(step) != {"action", "target", "arguments"} or step["target"] != service:
         raise ValueError("Action target does not match this incident")
+    if not isinstance(step["action"], str):
+        raise ValueError("Unknown action or arguments")
     schema = ACTIONS.get(step["action"])
     arguments = step["arguments"]
     if (
@@ -34,7 +36,7 @@ def validate_step(step, service):
 
 
 def make_plan(incident, evidence, steps, author, version, rationale):
-    if not isinstance(steps, list) or not 1 <= len(steps) <= 3 or version < 1:
+    if not isinstance(steps, list) or not 1 <= len(steps) <= 3 or type(version) is not int or version < 1:
         raise ValueError("A remediation plan requires one to three bounded actions")
     if not isinstance(rationale, str) or not 1 <= len(rationale.strip()) <= 1000:
         raise ValueError("Explain the proposed remediation")
