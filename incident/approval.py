@@ -1,9 +1,21 @@
 import uuid
+import math
 from .evidence import digest
 from .identity import require
 
 
+def _finite_time(value):
+    return type(value) in (int, float) and math.isfinite(value)
+
+
 def valid_binding(incident):
+    try:
+        return _valid_binding(incident)
+    except (KeyError, TypeError, AttributeError, ValueError):
+        return False
+
+
+def _valid_binding(incident):
     plan, evidence = incident.get("plan"), incident.get("evidence")
     if not plan or not evidence:
         return False
@@ -19,6 +31,8 @@ def valid_binding(incident):
 
 
 def review(incident, actor, supplied_digest, now):
+    if not _finite_time(now):
+        raise ValueError("Approval requires a finite timestamp")
     require(actor, "approve")
     if not incident.get("plan"):
         raise ValueError("No plan is available for review")
@@ -53,13 +67,22 @@ def review(incident, actor, supplied_digest, now):
     }
 
 
-def approved(incident, now):
+def _approved(incident, now):
     approval = incident.get("approval")
     return bool(
         approval
+        and _finite_time(now)
+        and _finite_time(approval["expires_at"])
         and valid_binding(incident)
         and approval["expires_at"] > now
         and approval["plan_digest"] == incident["plan"]["digest"]
         and approval["plan_version"] == incident["plan"]["version"]
         and approval["evidence_digest"] == incident["evidence"]["digest"]
     )
+
+
+def approved(incident, now):
+    try:
+        return _approved(incident, now)
+    except (KeyError, TypeError, AttributeError, ValueError):
+        return False
