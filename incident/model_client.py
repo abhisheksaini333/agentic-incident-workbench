@@ -32,9 +32,12 @@ class ModelClient:
             "/generate", json={"prompt": prompt, "max_new_tokens": 48}
         )
         response.raise_for_status()
+        if len(response.content) > 16384:
+            raise ValueError("Model response exceeds its bound")
         result = response.json()
         if (
-            not isinstance(result.get("text"), str)
+            not isinstance(result, dict)
+            or not isinstance(result.get("text"), str)
             or len(result["text"]) > 2000
             or result.get("revision") != REVISION
             or type(result.get("input_tokens")) is not int
