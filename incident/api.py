@@ -3,26 +3,30 @@ from typing import Literal
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from .identity import require
 from .workflow import Workflow
 from .http_limits import BodyLimitMiddleware
 from .rate_limit import RateLimit
 
 
-class LoginRequest(BaseModel):
+class RequestModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+
+class LoginRequest(RequestModel):
     subject: str = Field(min_length=1, max_length=100)
     password: str = Field(min_length=1, max_length=128)
 
 
-class IncidentRequest(BaseModel):
+class IncidentRequest(RequestModel):
     mode: Literal["rules", "single", "graph"] = "rules"
     service: str = Field(min_length=2, max_length=48)
     title: str = Field(min_length=1, max_length=160)
 
 
-class RevisionRequest(BaseModel):
-    revision: int = Field(ge=1)
+class RevisionRequest(RequestModel):
+    revision: int = Field(ge=1, strict=True)
 
 
 class ReviewRequest(RevisionRequest):
@@ -38,14 +42,14 @@ class ChangesRequest(RevisionRequest):
     reason: str = Field(min_length=1, max_length=500)
 
 
-class RolesRequest(BaseModel):
+class RolesRequest(RequestModel):
     roles: list[str] = Field(max_length=4)
 
 
-class SimulationRequest(BaseModel):
+class SimulationRequest(RequestModel):
     service: str = Field(min_length=2, max_length=48)
     faults: list[str] = Field(max_length=3)
-    variant: int = Field(default=0, ge=0, le=1)
+    variant: int = Field(default=0, ge=0, le=1, strict=True)
 
 
 def create_app(store, auth, tools=None, frontend_dir=None, model_enabled=False):
