@@ -6,11 +6,18 @@ export class Api {
   }
   /** @param {string} path @param {{method?: string, body?: any, signal?: AbortSignal}} options */
   async call(path, options = {}) {
-    if (!path.startsWith("/api/") || path.includes("..") || path.includes("\\"))
+    let decoded;
+    try {
+      decoded = decodeURIComponent(path);
+    } catch {
+      throw new Error("Use an application API path");
+    }
+    if (typeof path !== "string" || !decoded.startsWith("/api/") || decoded.includes("..") || decoded.includes("\\") || /[\x00-\x20\x7f]/.test(decoded))
       throw new Error("Use an application API path");
     const request = this.request;
     const response = await request(path, {
       method: options.method || "GET",
+      redirect: "error",
       signal: options.signal,
       headers: {
         Authorization: "Bearer " + this.token,
