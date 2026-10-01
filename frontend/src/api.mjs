@@ -28,14 +28,15 @@ export class Api {
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     });
-    const data = await response
-      .json()
-      .catch(() => ({ detail: "The service returned an unreadable response" }));
     if (response.status === 401) this.expired();
+    const data = await response.json().catch(() => null);
+    const readable = data !== null && typeof data === "object";
+    if (response.ok && !readable)
+      throw new Error("The service returned an unreadable response");
     if (!response.ok) {
-      const detail = Array.isArray(data.detail)
-        ? data.detail.map((item) => item.msg).join("; ")
-        : data.detail;
+      const detail = Array.isArray(data?.detail)
+        ? data.detail.map((item) => item?.msg).filter((message) => typeof message === "string").join("; ")
+        : data?.detail;
       throw new Error(
         typeof detail === "string"
           ? detail
